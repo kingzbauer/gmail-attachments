@@ -18,10 +18,9 @@ import (
 // The struct methods have not been optimized for concurrent use, create new
 // instances for different goroutines
 type Service struct {
-	config    io.Reader
-	oauth2Cnf *jwt.Config
-	UserID    string
-	srv       *gmail.Service
+	cnf    *jwt.Config
+	UserID string
+	srv    *gmail.Service
 	// DefaultQ  is provided when filtering messages Gmail search box style
 	DefaultQ        string
 	WriterGenerator WriterGenerator
@@ -30,19 +29,18 @@ type Service struct {
 // NewService instantiates a new service struct for API calls
 func NewService(config io.Reader, userID string) (*Service, error) {
 	srv := &Service{
-		config: config,
 		UserID: userID,
 	}
 
 	// initialize the gmail service
-	if err := srv.initializeJWTConfig(); err != nil {
+	if err := srv.initializeJWTConfig(config); err != nil {
 		return nil, err
 	}
 
 	// initialize the gmail service
 	ctx := context.Background()
 	gmailSrv, err := gmail.NewService(
-		ctx, option.WithTokenSource(srv.oauth2Cnf.TokenSource(ctx)))
+		ctx, option.WithTokenSource(srv.cnf.TokenSource(ctx)))
 	if err != nil {
 		return nil, err
 	}
@@ -54,18 +52,18 @@ func NewService(config io.Reader, userID string) (*Service, error) {
 	return srv, nil
 }
 
-func (srv *Service) initializeJWTConfig() error {
-	data, err := ioutil.ReadAll(srv.config)
+func (srv *Service) initializeJWTConfig(r io.Reader) error {
+	data, err := ioutil.ReadAll(r)
 	if err != nil {
 		return err
 	}
 
-	srv.oauth2Cnf, err = google.JWTConfigFromJSON(
+	srv.cnf, err = google.JWTConfigFromJSON(
 		data, gmail.GmailReadonlyScope, gmail.GmailModifyScope)
 	if err != nil {
 		return err
 	}
-	srv.oauth2Cnf.Subject = srv.UserID
+	srv.cnf.Subject = srv.UserID
 	return nil
 }
 
