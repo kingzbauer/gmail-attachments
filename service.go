@@ -28,6 +28,11 @@ type Service struct {
 
 // NewService instantiates a new service struct for API calls
 func NewService(config io.Reader, userID string) (*Service, error) {
+	// Close reader if closable
+	if closer, ok := config.(io.Closer); ok {
+		defer closer.Close()
+	}
+
 	srv := &Service{
 		UserID: userID,
 	}
