@@ -86,7 +86,7 @@ func processMessagePayload(srv *gmail.Service, userID string, msg *gmail.Message
 	fmt.Printf("%sFile name: %s\n", strings.Repeat("-", indent), part.Filename)
 	fmt.Printf("%sMime type: %s\n", strings.Repeat("-", indent), part.MimeType)
 	if part.MimeType == "application/pdf" {
-		if err := processMpesaStatement(srv, userID, part, msg); err != nil {
+		if err := processPDFFile(srv, userID, part, msg); err != nil {
 			log.Printf("Error process mpesa statement: %s\n", err)
 		}
 		return
@@ -113,7 +113,7 @@ func constructFilename(part *gmail.MessagePart, msg *gmail.Message) string {
 	return fmt.Sprintf("%s-%s-%s.pdf", part.Filename, msg.Id, part.PartId)
 }
 
-func processMpesaStatement(srv *gmail.Service, userID string, part *gmail.MessagePart, msg *gmail.Message) error {
+func processPDFFile(srv *gmail.Service, userID string, part *gmail.MessagePart, msg *gmail.Message) error {
 	// Retrieve the attachment
 	body, err := retrieveAttachment(srv, userID, msg, part.Body)
 	if err != nil {
