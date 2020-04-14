@@ -47,7 +47,8 @@ func main() {
 	content, err := ioutil.ReadFile(*c)
 	chk("Read config file", err)
 
-	cnf, err := google.JWTConfigFromJSON(content, gmail.GmailReadonlyScope)
+	cnf, err := google.JWTConfigFromJSON(content,
+		gmail.GmailReadonlyScope, gmail.GmailModifyScope)
 	chk("JWT Config from JSON", err)
 	cnf.Subject = *subject
 
