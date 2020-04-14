@@ -1,18 +1,14 @@
 package main
 
 import (
-	"context"
 	"encoding/base64"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
 
-	"golang.org/x/oauth2/google"
 	"google.golang.org/api/gmail/v1"
-	"google.golang.org/api/option"
 )
 
 var (
@@ -44,37 +40,15 @@ func main() {
 		log.Fatal("q query required")
 	}
 
-	content, err := ioutil.ReadFile(*c)
-	chk("Read config file", err)
+	f, err := os.Open(*c)
+	chk("Open config file", err)
+	srv, err := NewService(f, *subject)
+	chk("Initialize service", err)
+	srv.DefaultQ = "is:unread from:m-pesastatements@safaricom.co.ke"
 
-	cnf, err := google.JWTConfigFromJSON(content,
-		gmail.GmailReadonlyScope, gmail.GmailModifyScope)
-	chk("JWT Config from JSON", err)
-	cnf.Subject = *subject
-
-	ctx := context.Background()
-	srv, err := gmail.NewService(ctx, option.WithTokenSource(cnf.TokenSource(ctx)))
-	chk("New service", err)
-
-	call := srv.Users.Messages.List(*subject)
-	call = call.Q(*q)
-
-	resp, err := call.Do()
-	chk("Do list messages", err)
-
-	readMsgs := make([]*gmail.Message, 0)
-	for _, msg := range resp.Messages {
-		if err := processMessage(srv, *subject, msg); err == nil {
-			readMsgs = append(readMsgs, msg)
-		}
-	}
-
-	if len(readMsgs) > 0 {
-		if err := markAsRead(srv, *subject, readMsgs); err != nil {
-			chk("Mark messages as read", err)
-		} else {
-			log.Printf("%d messages marked as read/processed\n", len(readMsgs))
-		}
+	attachments, err := srv.ProcessPDFAttachments(true)
+	if attachments != nil {
+		attachments.Close()
 	}
 }
 

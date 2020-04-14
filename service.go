@@ -127,7 +127,7 @@ func FileGenerator(filename string) (io.Writer, error) {
 }
 
 // ProcessPDFAttachments reads pdf attachments from the emails fetched
-func (srv *Service) ProcessPDFAttachments(fileGen WriterGenerator, markRead bool) (ProcessedAttachments, error) {
+func (srv *Service) ProcessPDFAttachments(markRead bool) (ProcessedAttachments, error) {
 	msgs, err := srv.ListMessages()
 	if err != nil {
 		return nil, err
@@ -138,8 +138,9 @@ func (srv *Service) ProcessPDFAttachments(fileGen WriterGenerator, markRead bool
 	// retrieve the payload part of the message
 OUTER:
 	for i, msg := range msgs {
-		if msg, err := retrieveMessage(srv.srv, srv.UserID, msg.Id); err == nil {
-			msgs[i] = msg
+		if m, err := retrieveMessage(srv.srv, srv.UserID, msg.Id); err == nil {
+			msgs[i] = m
+			msg = m
 		}
 		// Retrieve the parts with attachments
 		parts, err := srv.retrieveMessageAttachments(msg, msg.Payload)
