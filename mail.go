@@ -61,12 +61,23 @@ func main() {
 	resp, err := call.Do()
 	chk("Do list messages", err)
 
+	readMsgs := make([]*gmail.Message, 0)
 	for _, msg := range resp.Messages {
-		processMessage(srv, *subject, msg)
+		if err := processMessage(srv, *subject, msg); err == nil {
+			readMsgs = append(readMsgs, msg)
+		}
+	}
+
+	if len(readMsgs) > 0 {
+		if err := markAsRead(srv, *subject, readMsgs); err != nil {
+			chk("Mark messages as read", err)
+		} else {
+			log.Printf("%d messages marked as read/processed\n", len(readMsgs))
+		}
 	}
 }
 
-func processMessage(srv *gmail.Service, userID string, msg *gmail.Message) {
+func processMessage(srv *gmail.Service, userID string, msg *gmail.Message) error {
 	fmt.Printf("Message ID: %s\n", msg.Id)
 	payload := msg.Payload
 	if msg.Payload == nil {
@@ -78,23 +89,32 @@ func processMessage(srv *gmail.Service, userID string, msg *gmail.Message) {
 
 	if payload != nil {
 		fmt.Printf("Snippet: %s\n", msg.Snippet)
-		processMessagePayload(srv, userID, msg, payload, 0)
+		if err := processMessagePayload(srv, userID, msg, payload, 0); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
-func processMessagePayload(srv *gmail.Service, userID string, msg *gmail.Message, part *gmail.MessagePart, indent int) {
+func processMessagePayload(srv *gmail.Service, userID string, msg *gmail.Message, part *gmail.MessagePart, indent int) error {
 	fmt.Printf("%sFile name: %s\n", strings.Repeat("-", indent), part.Filename)
 	fmt.Printf("%sMime type: %s\n", strings.Repeat("-", indent), part.MimeType)
 	if part.MimeType == "application/pdf" {
 		if err := processPDFFile(srv, userID, part, msg); err != nil {
 			log.Printf("Error process mpesa statement: %s\n", err)
+			return err
 		}
-		return
+		return nil
 	}
 
 	for _, part := range part.Parts {
-		processMessagePayload(srv, userID, msg, part, indent+4)
+		if err := processMessagePayload(srv, userID, msg, part, indent+4); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
 func printPartHeaders(headers []*gmail.MessagePartHeader, indent int) {
@@ -148,4 +168,19 @@ func retrieveAttachment(srv *gmail.Service, userID string, msg *gmail.Message, b
 		return call.Do()
 	}
 	return body, nil
+}
+
+func markAsRead(srv *gmail.Service, userID string, msgs []*gmail.Message) error {
+	msgIds := make([]string, len(msgs))
+	for i, msg := range msgs {
+		msgIds[i] = msg.Id
+	}
+
+	req := &gmail.BatchModifyMessagesRequest{
+		Ids:            msgIds,
+		RemoveLabelIds: []string{"UNREAD"},
+	}
+
+	call := srv.Users.Messages.BatchModify(userID, req)
+	return call.Do()
 }
