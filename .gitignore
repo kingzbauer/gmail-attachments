@@ -1,0 +1,6 @@
+# Vim temp files
+*.sw?
+# pdf files
+*.pdf
+# txt files
+*.txt
