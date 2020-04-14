@@ -1,8 +1,7 @@
-package main
+package gmail
 
 import (
 	"encoding/base64"
-	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -10,47 +9,6 @@ import (
 
 	"google.golang.org/api/gmail/v1"
 )
-
-var (
-	c       = flag.String("c", "", "config file")
-	subject = flag.String("s", "", "subject for service a/c to impersonate")
-	q       = flag.String("q", "", "Gmail like query to filter across messages")
-)
-
-func chk(msg string, err error) {
-	if err != nil {
-		log.Fatalf("Error %s => %s", msg, err)
-	}
-}
-
-func main() {
-	flag.Parse()
-	if len(*c) == 0 {
-		flag.Usage()
-		log.Fatal("c config file required")
-	}
-
-	if len(*subject) == 0 {
-		flag.Usage()
-		log.Fatal("s subject required")
-	}
-
-	if *q == "" {
-		flag.Usage()
-		log.Fatal("q query required")
-	}
-
-	f, err := os.Open(*c)
-	chk("Open config file", err)
-	srv, err := NewService(f, *subject)
-	chk("Initialize service", err)
-	srv.DefaultQ = "is:unread from:m-pesastatements@safaricom.co.ke"
-
-	attachments, err := srv.ProcessPDFAttachments(true)
-	if attachments != nil {
-		attachments.Close()
-	}
-}
 
 func processMessage(srv *gmail.Service, userID string, msg *gmail.Message) error {
 	fmt.Printf("Message ID: %s\n", msg.Id)

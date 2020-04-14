@@ -1,4 +1,4 @@
-module attachments
+module github.com/kingzbauer/gmail
 
 go 1.13
 
