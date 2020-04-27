@@ -217,3 +217,8 @@ func (srv *Service) retrieveMessageAttachments(msg *gmail.Message, part *gmail.M
 	// Return an empty list
 	return parts, nil
 }
+
+// GmailService returns the underlying gmail service
+func (srv *Service) GmailService() *gmail.Service {
+	return srv.srv
+}
