@@ -97,6 +97,9 @@ type WriterGenerator func(filename string) (io.Writer, error)
 type ProcessedAttachment struct {
 	Body     io.Reader
 	Filename string
+	// Original filename
+	OriginalName string
+	Headers      []*gmail.MessagePartHeader
 }
 
 // ProcessedAttachments a slice of ProcessAttachment
@@ -184,7 +187,12 @@ func (srv *Service) processAttachment(msg *gmail.Message, part *gmail.MessagePar
 		return nil, err
 	}
 
-	return &ProcessedAttachment{Filename: filename, Body: f.(io.Reader)}, nil
+	return &ProcessedAttachment{
+		Filename:     filename,
+		OriginalName: part.Filename,
+		Body:         f.(io.Reader),
+		Headers:      part.Headers,
+	}, nil
 }
 
 func (srv *Service) retrieveMessageAttachments(msg *gmail.Message, part *gmail.MessagePart) ([]*gmail.MessagePart, error) {

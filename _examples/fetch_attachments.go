@@ -46,5 +46,12 @@ func main() {
 	attachments, err := srv.ProcessPDFAttachments(true)
 	if attachments != nil {
 		attachments.Close()
+		for _, at := range attachments {
+			log.Printf("Original filename: %s", at.OriginalName)
+			for _, header := range at.Headers {
+				log.Printf("Name: %s, Value: %s", header.Name, header.Value)
+			}
+		}
 	}
+	log.Println(err)
 }
