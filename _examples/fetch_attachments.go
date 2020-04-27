@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/kingzbauer/gmail"
+	"github.com/kingzbauer/gmail-attachments/gmail"
 )
 
 var (
